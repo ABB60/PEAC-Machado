@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia Micro:bit - Aprende Programación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .challenge-scroll::-webkit-scrollbar { width: 4px; }
+        .challenge-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .step-number { min-width: 2.5rem; }
+        iframe { background-color: white; }
+        
+        .completed-card {
+            border-color: #22c55e !important;
+            background-color: #f0fdf4 !important;
+        }
+        
+        /* Colores de bloques MakeCode */
+        .block-basic { background-color: #007acc; color: white; border-left: 6px solid #005a9e; }
+        .block-input { background-color: #d400d4; color: white; border-left: 6px solid #a300a3; }
+        .block-logic { background-color: #008a00; color: white; border-left: 6px solid #006400; }
+        .block-math { background-color: #712672; color: white; border-left: 6px solid #5a1e5b; }
+        .block-variables { background-color: #ff5c00; color: white; border-left: 6px solid #cc4a00; }
+        .block-radio { background-color: #e3008c; color: white; border-left: 6px solid #b3006e; }
+        .block-loop { background-color: #107c10; color: white; border-left: 6px solid #0b5a0b; }
+
+        .difficulty-iniciado { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .difficulty-basico { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .difficulty-intermedio { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .difficulty-avanzado { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .difficulty-experto { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .btn-ready { animation: pulse-green 2s infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 overflow-hidden h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white p-4 shadow-lg flex justify-between items-center z-30">
+        <div class="flex items-center gap-3">
+            <button id="menu-toggle" class="p-2 hover:bg-indigo-500 rounded-lg transition-colors md:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-300"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg>
+            <h1 class="text-xl font-bold tracking-tight">Academia Micro:bit</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="reset-progress" class="text-[10px] uppercase font-bold text-indigo-200 hover:text-white transition-colors mr-2">Reiniciar</button>
+            <div id="progress-badge" class="bg-indigo-700 px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                <span id="progress-text">0 / 10 Retos</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-72 bg-white border-r transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 overflow-y-auto challenge-scroll p-4 pt-20 md:pt-4">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-2">Mapa de Retos</h2>
+            <nav id="challenge-list" class="space-y-1">
+                <!-- Botones JS -->
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
+            <div class="max-w-6xl mx-auto space-y-6">
+                
+                <section id="challenge-card" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 transition-all duration-300">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div class="flex-1">
+                            <div id="challenge-meta" class="flex items-center gap-3 mb-3"></div>
+                            <h2 id="challenge-title" class="text-3xl font-extrabold text-slate-800 leading-tight">Selecciona un reto</h2>
+                            <div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <p id="challenge-objective" class="text-slate-600 flex items-start gap-2 text-sm md:text-base leading-relaxed"></p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center gap-2">
+                            <button id="complete-btn" class="shrink-0 flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black transition-all shadow-xl hover:scale-105 active:scale-95 text-lg min-w-[240px]">
+                                <span id="complete-btn-icon"></span>
+                                <span id="complete-btn-text">Marcar como hecho</span>
+                            </button>
+                            <p id="completion-status" class="text-[10px] font-bold uppercase tracking-widest text-green-600 hidden">¡Misión Cumplida!</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                            <h3 class="text-lg font-bold flex items-center gap-2 mb-6 border-b pb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                                Guía Detallada Paso a Paso
+                            </h3>
+                            <div id="steps-container" class="space-y-6"></div>
+                        </div>
+
+                        <div class="bg-amber-50 rounded-2xl p-6 border border-amber-200 flex gap-4">
+                            <div class="bg-amber-100 p-2 rounded-lg h-fit text-amber-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-amber-800 text-sm uppercase">Pista del Mentor</h4>
+                                <p id="challenge-hint" class="text-amber-900/70 text-sm mt-1"></p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800 rounded-2xl p-6 text-white shadow-xl overflow-hidden relative">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-bold flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    Ayuda Visual de Bloques
+                                </h4>
+                                <button id="solution-toggle" class="text-xs font-bold bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-colors border border-slate-600">
+                                    VER BLOQUES
+                                </button>
+                            </div>
+                            <div id="solution-content" class="hidden space-y-2 animate-in fade-in duration-300">
+                                <p class="text-[10px] text-slate-400 mb-2 uppercase font-bold italic">Crea este programa en tu editor:</p>
+                                <div id="challenge-solution-blocks" class="flex flex-col gap-2">
+                                    <!-- Bloques visuales generados por JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col h-[650px] lg:h-auto">
+                        <div class="bg-slate-200 rounded-2xl overflow-hidden flex-1 border-2 border-slate-300 shadow-inner relative group min-h-[500px]">
+                            <iframe id="makecode-frame" src="https://makecode.microbit.org/#editor" class="w-full h-full border-none" title="Microbit Editor" allow="usb; camera"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="flex justify-between items-center py-8 border-t border-slate-200">
+                    <button id="prev-btn" class="flex items-center gap-2 px-6 py-4 rounded-2xl font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-30">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        RETO ANTERIOR
+                    </button>
+                    
+                    <div id="nav-warning" class="text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                        <svg id="warning-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <span id="warning-text">Valida el reto para continuar</span>
+                    </div>
+
+                    <button id="next-btn" class="flex items-center gap-2 px-6 py-4 rounded-2xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:grayscale">
+                        SIGUIENTE PASO
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-30 hidden"></div>
+
+    <script>
+        const CHALLENGES = [
+            { 
+                id: 1, title: "Reto 1: Corazón Palpitante", difficulty: "Iniciado", objective: "Aprender a mostrar imágenes y crear una animación simple.", 
+                steps: [
+                    "**Prepara la pantalla**: En la categoría azul **'Básico'**, busca el bloque **'mostrar icono'**. Arrástralo dentro del bloque azul **'para siempre'** que ya está en tu pantalla.", 
+                    "**Dibuja el corazón**: Haz clic en el dibujo del bloque para elegir el **Corazón**. Verás que en el simulador de la izquierda ya aparece una luz.", 
+                    "**Añade un descanso**: Para que el ojo humano note el latido, necesitamos una pausa. Busca el bloque **'pausa (ms)'** (también en Básico) y ponlo debajo del corazón. Ponlo en **500ms** (medio segundo).", 
+                    "**Apaga el latido**: Pon otro bloque de **'mostrar icono'**, pero esta vez elige el dibujo de un **corazón pequeño** o una imagen vacía. ¡Ya tienes el movimiento!", 
+                    "**Finaliza el ciclo**: Añade una última **'pausa'** de 500ms al final. Esto evita que el corazón vuelva a encenderse demasiado rápido."
+                ], 
+                hint: "El bloque 'para siempre' es como una cinta que no para de girar. Todo lo que pongas dentro se repetirá hasta que desconectes la placa.", 
+                solution: [
+                    { text: "PARA SIEMPRE", type: "basic" },
+                    { text: "MOSTRAR ICONO: CORAZÓN", type: "basic" },
+                    { text: "PAUSA 500ms", type: "basic" },
+                    { text: "MOSTRAR ICONO: PEQUEÑO", type: "basic" },
+                    { text: "PAUSA 500ms", type: "basic" }
+                ]
+            },
+            { 
+                id: 2, title: "Reto 2: Mi Nombre en Luces", difficulty: "Iniciado", objective: "Mostrar texto en la matriz LED de forma continua.", 
+                steps: [
+                    "**Busca la categoría Básico**: Ve a la sección azul y localiza el bloque llamado **'mostrar cadena'**. En programación, una 'cadena' es simplemente una pieza de texto.",
+                    "**Escribe tu nombre**: Haz clic dentro del recuadro blanco donde dice 'Hello' y escribe **tu nombre**. Ten cuidado con las tildes, ¡algunas pantallas LED no las leen bien!",
+                    "**Activa la repetición**: Arrastra el bloque dentro del contenedor **'para siempre'**. Verás cómo tu nombre empieza a deslizarse letra por letra en la placa roja.",
+                    "**Decoración extra**: ¿Quieres que sea más divertido? Pon un bloque de **'mostrar icono'** con una cara sonriente justo antes de tu nombre."
+                ], 
+                hint: "Las cadenas de texto se deslizan de derecha a izquierda automáticamente. Si el nombre es muy largo, tardará un poco más en volver a empezar.", 
+                solution: [
+                    { text: "PARA SIEMPRE", type: "basic" },
+                    { text: "MOSTRAR ICONO: CARA FELIZ", type: "basic" },
+                    { text: "MOSTRAR CADENA: 'TU NOMBRE'", type: "basic" }
+                ]
+            },
+            { 
+                id: 3, title: "Reto 3: Botones Mágicos", difficulty: "Básico", objective: "Hacer que la placa reaccione al interactuar con el usuario.", 
+                steps: [
+                    "**Detecta la presión**: Entra en la categoría rosa **'Entrada'**. Verás un bloque con forma de gorro que dice **'al presionar el botón A'**. Sácalo a tu zona de trabajo.",
+                    "**Crea una reacción**: Dentro de ese bloque rosa, pon un bloque de **'mostrar icono'** con una cara feliz. Ahora, cuando hagas clic en el botón A del simulador, ¡la placa sonreirá!",
+                    "**Segundo botón**: Saca otro bloque de **'al presionar el botón A'**. Al principio se verá gris porque está repetido. Haz clic en la flechita y cámbialo a **'botón B'**.",
+                    "**Diferencia los estados**: En el botón B, pon una cara triste o una calavera. Ahora tienes una placa interactiva que cambia según lo que pulses."
+                ], 
+                hint: "Los bloques de 'Entrada' son eventos. No necesitan estar dentro de 'para siempre' porque 'duermen' hasta que alguien pulsa el botón.", 
+                solution: [
+                    { text: "AL PRESIONAR BOTÓN A", type: "input" },
+                    { text: "MOSTRAR ICONO: FELIZ", type: "basic" },
+                    { text: "AL PRESIONAR BOTÓN B", type: "input" },
+                    { text: "MOSTRAR ICONO: TRISTE", type: "basic" }
+                ]
+            },
+            { 
+                id: 4, title: "Reto 4: Dado Electrónico", difficulty: "Básico", objective: "Usar el acelerómetro y números aleatorios.", 
+                steps: [
+                    "**Sensor de movimiento**: En la categoría rosa **'Entrada'**, busca el bloque **'si agitado'**. Este bloque detecta cuando sacudimos la micro:bit.",
+                    "**Limpia la pantalla**: Lo primero al tirar un dado es borrar el número anterior. Busca **'borrar pantalla'** en Básico y ponlo al principio del bloque 'si agitado'.",
+                    "**Genera el azar**: Ve a la categoría morada **'Matemáticas'** y busca el bloque redondo **'escoger al azar de 0 a 10'**. Arrástralo pero no lo sueltes todavía.",
+                    "**Une las piezas**: Ve a Básico, coge **'mostrar número'** y ponlo dentro de 'si agitado'. Ahora, encaja el bloque de azar dentro del hueco del número.",
+                    "**Configura el dado**: Cambia los números del azar para que sea de **1 a 6**. ¡Agita la placa y mira qué número sale!"
+                ], 
+                hint: "El simulador tiene un botón que dice 'SHAKE'. Haz clic ahí para simular el movimiento de agitar.", 
+                solution: [
+                    { text: "SI AGITADO", type: "input" },
+                    { text: "BORRAR PANTALLA", type: "basic" },
+                    { text: "MOSTRAR NÚMERO", type: "basic" },
+                    { text: "AZAR DE 1 A 6", type: "math" }
+                ]
+            },
+            { 
+                id: 5, title: "Reto 5: Alarma de Luz", difficulty: "Intermedio", objective: "Usar sensores ambientales y lógica condicional.", 
+                steps: [
+                    "**El cerebro lógico**: En la categoría verde **'Lógica'**, busca el bloque **'si... entonces... si no'**. Ponlo dentro de **'para siempre'**.",
+                    "**La comparación**: En la misma categoría verde, busca el bloque que tiene un signo de menor que **(0 < 0)**. Encájalo en el hueco del 'si'.",
+                    "**Mide la luz**: En la categoría rosa **'Entrada'**, busca el bloque redondo **'nivel de luz'**. Ponlo en el lado izquierdo de la comparación.",
+                    "**Establece el límite**: Cambia el 0 de la derecha por **100**. Ahora la placa preguntará: '¿La luz es menor que 100?'",
+                    "**Acción y reacción**: Si la respuesta es SÍ (hay poca luz), muestra una **Luna**. En la parte de 'si no' (hay mucha luz), muestra un **Sol**."
+                ], 
+                hint: "En el simulador, aparecerá un icono de sol arriba a la izquierda. Arrastra el ratón para cambiar cuánta luz le llega a la placa.", 
+                solution: [
+                    { text: "PARA SIEMPRE", type: "basic" },
+                    { text: "SI <NIVEL DE LUZ> < 100", type: "logic" },
+                    { text: "MOSTRAR ICONO: LUNA", type: "basic" },
+                    { text: "SI NO: MOSTRAR SOL", type: "logic" }
+                ]
+            },
+            { 
+                id: 6, title: "Reto 6: Termómetro Digital", difficulty: "Intermedio", objective: "Aprender a guardar información en variables.", 
+                steps: [
+                    "**Crea un almacén**: Ve a la categoría naranja **'Variables'** y haz clic en 'Crear una variable'. Ponle de nombre **'temp'**.",
+                    "**Prepara el botón**: Saca el bloque rosa **'al presionar el botón A'**.",
+                    "**Guarda el dato**: Usa el bloque naranja **'establecer temp para'**. En el hueco, pon el bloque rosa **'temperatura (ºC)'** (lo encontrarás en Entrada).",
+                    "**Enseña el resultado**: Después de guardar la temperatura, usa el bloque azul **'mostrar número'** y arrastra dentro la 'burbuja' naranja que dice **'temp'**.",
+                    "**Prueba el sensor**: Pulsa el botón A y verás cuántos grados hace. ¡Cambia el termómetro en el simulador para ver cómo varía!"
+                ], 
+                hint: "Una variable es como una memoria temporal. Si no la guardas al pulsar el botón, la placa olvidará la temperatura anterior.", 
+                solution: [
+                    { text: "AL PRESIONAR BOTÓN A", type: "input" },
+                    { text: "ESTABLECER temp A: TEMPERATURA", type: "variables" },
+                    { text: "MOSTRAR NÚMERO: temp", type: "basic" }
+                ]
+            },
+            { 
+                id: 7, title: "Reto 7: Brújula Básica", difficulty: "Avanzado", objective: "Orientarse usando el magnetómetro interno.", 
+                steps: [
+                    "**Variable de dirección**: Crea una variable naranja llamada **'grados'**.",
+                    "**Lectura continua**: En 'para siempre', usa el bloque naranja **'establecer grados para'** y busca en Entrada el bloque **'dirección de la brújula'**.",
+                    "**Condición de Norte**: Saca un bloque verde de **'si... entonces'**. Queremos saber si estamos mirando al Norte (valores cerca de 0).",
+                    "**Lógica de ángulo**: Pon una comparación: **'si grados < 45'**. Si esto es verdad, añade un bloque de **'mostrar cadena'** con la letra **'N'**.",
+                    "**Limpieza**: En el 'si no', pon un bloque de **'borrar pantalla'** para que la letra desaparezca cuando te muevas del Norte."
+                ], 
+                hint: "Al usar la brújula en el simulador, tendrás que mover un pequeño logo de micro:bit para completar la calibración antes de que funcione.", 
+                solution: [
+                    { text: "PARA SIEMPRE", type: "basic" },
+                    { text: "grados = DIRECCIÓN BRÚJULA", type: "variables" },
+                    { text: "SI grados < 45", type: "logic" },
+                    { text: "MOSTRAR CADENA: 'N'", type: "basic" },
+                    { text: "SI NO: BORRAR PANTALLA", type: "basic" }
+                ]
+            },
+            { 
+                id: 8, title: "Reto 8: Contador de Pasos", difficulty: "Avanzado", objective: "Crear un podómetro funcional.", 
+                steps: [
+                    "**Inicio en cero**: Al empezar, debemos tener 0 pasos. En el bloque **'al iniciar'**, usa el bloque naranja para poner la variable **'pasos'** a 0.",
+                    "**Detección de zancada**: Saca el bloque rosa **'si agitado'**. Cada vez que la placa detecte este movimiento, consideraremos que hemos dado un paso.",
+                    "**Suma uno**: Dentro de 'si agitado', usa el bloque naranja **'cambiar pasos por 1'**. Esto suma 1 al valor anterior (si tenías 10, ahora tendrás 11).",
+                    "**Actualiza la pantalla**: En el bloque **'para siempre'**, pon un **'mostrar número'** con la variable 'pasos' para ver tu progreso en tiempo real."
+                ], 
+                hint: "Cambiar por 1 no es lo mismo que establecer a 1. 'Establecer' borra lo anterior, 'Cambiar' suma sobre lo que ya hay.", 
+                solution: [
+                    { text: "AL INICIAR: pasos = 0", type: "basic" },
+                    { text: "SI AGITADO", type: "input" },
+                    { text: "CAMBIAR pasos POR 1", type: "variables" },
+                    { text: "PARA SIEMPRE: MOSTRAR NÚMERO pasos", type: "basic" }
+                ]
+            },
+            { 
+                id: 9, title: "Reto 9: Radio Mensajes", difficulty: "Experto", objective: "Enviar información entre dos placas micro:bit.", 
+                steps: [
+                    "**Sintoniza la frecuencia**: Al iniciar, ve a la categoría rosa oscuro **'Radio'** y usa el bloque **'radio establecer grupo'**. Pon el número **1** (o cualquier número que acuerdes con un compañero).",
+                    "**El transmisor**: En 'al presionar el botón A', busca en Radio el bloque **'radio enviar número'**. Pon por ejemplo el número **7**.",
+                    "**El receptor**: Busca el bloque especial **'al recibir radio (receivedNumber)'**. Este bloque se activa solo cuando le llega un mensaje.",
+                    "**Muestra el mensaje**: Dentro de ese bloque receptor, pon un **'mostrar número'** y usa la burbuja roja que dice **'receivedNumber'** que aparece en el bloque."
+                ], 
+                hint: "¡En el simulador aparecerán automáticamente dos placas micro:bit para que pruebes cómo una le habla a la otra!", 
+                solution: [
+                    { text: "AL INICIAR: GRUPO RADIO 1", type: "radio" },
+                    { text: "AL PRESIONAR BOTÓN A", type: "input" },
+                    { text: "RADIO ENVIAR NÚMERO 7", type: "radio" },
+                    { text: "AL RECIBIR RADIO: receivedNumber", type: "radio" },
+                    { text: "MOSTRAR NÚMERO: receivedNumber", type: "basic" }
+                ]
+            },
+            { 
+                id: 10, title: "Reto 10: Nivelador", difficulty: "Experto", objective: "Detectar inclinación precisa para nivelar superficies.", 
+                steps: [
+                    "**Lectura de ejes**: Queremos saber si la placa está plana. Para eso usaremos el bloque **'aceleración (mg) x'** que está en Entrada.",
+                    "**Margen de error**: En Lógica, usa un 'si... entonces' con el bloque **'Y'**. Necesitamos comprobar dos cosas a la vez.",
+                    "**Zona segura**: La condición será: **'aceleración x > -100'** Y **'aceleración x < 100'**. Esto significa que la placa está casi perfectamente horizontal.",
+                    "**Feedback visual**: Si está centrada, muestra una barra horizontal central. Si no, muestra flechas o un icono que pida corregir la posición."
+                ], 
+                hint: "El eje X mide la inclinación lateral (izquierda/derecha). El valor 0 significa que está totalmente plana.", 
+                solution: [
+                    { text: "PARA SIEMPRE", type: "basic" },
+                    { text: "SI acel. x > -100 Y acel. x < 100", type: "logic" },
+                    { text: "MOSTRAR BARRA CENTRAL", type: "basic" },
+                    { text: "SI NO: MOSTRAR ICONO INCLINADO", type: "basic" }
+                ]
+            }
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            let currentIdx = 0;
+            let completed = JSON.parse(localStorage.getItem('mb_completed') || '[]');
+
+            const el = {
+                sidebar: document.getElementById('sidebar'),
+                overlay: document.getElementById('overlay'),
+                challengeList: document.getElementById('challenge-list'),
+                challengeCard: document.getElementById('challenge-card'),
+                title: document.getElementById('challenge-title'),
+                meta: document.getElementById('challenge-meta'),
+                objective: document.getElementById('challenge-objective'),
+                steps: document.getElementById('steps-container'),
+                hint: document.getElementById('challenge-hint'),
+                solContent: document.getElementById('solution-content'),
+                solBlocks: document.getElementById('challenge-solution-blocks'),
+                solToggle: document.getElementById('solution-toggle'),
+                completeBtn: document.getElementById('complete-btn'),
+                completionStatus: document.getElementById('completion-status'),
+                progressText: document.getElementById('progress-text'),
+                prevBtn: document.getElementById('prev-btn'),
+                nextBtn: document.getElementById('next-btn'),
+                navWarning: document.getElementById('nav-warning'),
+                warningText: document.getElementById('warning-text'),
+                warningIcon: document.getElementById('warning-icon'),
+                menuToggle: document.getElementById('menu-toggle'),
+                resetBtn: document.getElementById('reset-progress')
+            };
+
+            function updateUI() {
+                const c = CHALLENGES[currentIdx];
+                const isDone = completed.includes(c.id);
+
+                el.title.textContent = c.title;
+                const difficultyClass = `difficulty-${c.difficulty.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`;
+                el.meta.innerHTML = `
+                    <span class="px-3 py-1 ${difficultyClass} text-[11px] font-black rounded-full uppercase tracking-widest shadow-sm">${c.difficulty}</span>
+                    <span class="text-slate-400 text-xs font-bold uppercase tracking-widest ml-2">RETO ${c.id} / ${CHALLENGES.length}</span>
+                `;
+                el.objective.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500 shrink-0"><path d="m12 14 4-4"/><path d="m3.34 19 8.66-8.66L20.66 19"/><path d="m3.34 5 8.66 8.66L20.66 5"/></svg>
+                    <span><strong class="text-slate-900">Misión:</strong> ${c.objective}</span>
+                `;
+                el.hint.textContent = c.hint;
+                
+                // Render Steps with Bold Support
+                el.steps.innerHTML = '';
+                c.steps.forEach((step, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'flex gap-5 items-start group';
+                    
+                    // Convert **text** to bold
+                    const formattedStep = step.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 font-extrabold">$1</strong>');
+                    
+                    div.innerHTML = `
+                        <span class="step-number w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-black shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-sm">${i+1}</span>
+                        <p class="text-slate-700 pt-1.5 text-[15px] leading-relaxed font-medium">${formattedStep}</p>
+                    `;
+                    el.steps.appendChild(div);
+                });
+
+                // Render Solution Blocks
+                el.solBlocks.innerHTML = '';
+                c.solution.forEach(block => {
+                    const b = document.createElement('div');
+                    b.className = `block-${block.type} p-3 rounded-r-lg rounded-l-sm shadow-sm text-[10px] font-black uppercase tracking-wider mb-1 flex items-center justify-between transition-transform hover:scale-[1.02] cursor-default`;
+                    b.innerHTML = `<span>${block.text}</span> <div class="w-3 h-3 bg-white/20 rounded-full"></div>`;
+                    el.solBlocks.appendChild(b);
+                });
+
+                // Logic for validation and progression
+                if (isDone) {
+                    el.challengeCard.classList.add('completed-card');
+                    el.completeBtn.className = `shrink-0 flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black transition-all shadow-xl bg-green-500 text-white hover:bg-green-600 active:scale-95 text-lg min-w-[240px]`;
+                    el.completeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> COMPLETADO`;
+                    el.completionStatus.classList.remove('hidden');
+                    el.nextBtn.disabled = currentIdx === CHALLENGES.length - 1;
+                    el.nextBtn.classList.add('btn-ready');
+                    el.navWarning.className = "text-[11px] font-black text-green-600 uppercase tracking-widest flex items-center gap-2";
+                    el.warningText.textContent = "Camino despejado";
+                    el.warningIcon.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>';
+                } else {
+                    el.challengeCard.classList.remove('completed-card');
+                    el.completeBtn.className = `shrink-0 flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black transition-all shadow-xl bg-slate-900 text-white hover:bg-indigo-600 active:scale-95 text-lg min-w-[240px]`;
+                    el.completeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> VALIDAR RETO`;
+                    el.completionStatus.classList.add('hidden');
+                    el.nextBtn.disabled = true;
+                    el.nextBtn.classList.remove('btn-ready');
+                    el.navWarning.className = "text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2";
+                    el.warningText.textContent = "Valida el reto para continuar";
+                    el.warningIcon.innerHTML = '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>';
+                }
+                
+                el.progressText.textContent = `${completed.length} / ${CHALLENGES.length} Retos`;
+                el.solContent.classList.add('hidden');
+                el.solToggle.textContent = 'VER BLOQUES';
+                el.prevBtn.disabled = currentIdx === 0;
+
+                renderSidebar();
+            }
+
+            function renderSidebar() {
+                el.challengeList.innerHTML = '';
+                CHALLENGES.forEach((c, i) => {
+                    const isDone = completed.includes(c.id);
+                    const isActive = currentIdx === i;
+                    const btn = document.createElement('button');
+                    btn.className = `w-full flex items-center gap-4 p-3.5 rounded-2xl text-left transition-all relative overflow-hidden group ${isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 z-10' : 'hover:bg-slate-100 text-slate-600 font-medium'}`;
+                    
+                    btn.innerHTML = `
+                        <div class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold shrink-0 ${isActive ? 'bg-white/20' : (isDone ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-400')}">
+                            ${isDone && !isActive ? '✓' : i + 1}
+                        </div>
+                        <span class="truncate text-xs font-bold uppercase tracking-tight">${c.title}</span>
+                    `;
+                    btn.onclick = () => { currentIdx = i; updateUI(); closeMobileMenu(); };
+                    el.challengeList.appendChild(btn);
+                });
+            }
+
+            el.completeBtn.onclick = () => {
+                const id = CHALLENGES[currentIdx].id;
+                if (!completed.includes(id)) {
+                    completed.push(id);
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#6366f1', '#22c55e', '#facc15'] });
+                } else {
+                    completed = completed.filter(c => c !== id);
+                }
+                localStorage.setItem('mb_completed', JSON.stringify(completed));
+                updateUI();
+            };
+
+            el.solToggle.onclick = () => {
+                const isHidden = el.solContent.classList.toggle('hidden');
+                el.solToggle.textContent = isHidden ? 'VER BLOQUES' : 'OCULTAR AYUDA';
+            };
+
+            el.resetBtn.onclick = () => {
+                if (confirm("¿Borrar progreso?")) {
+                    completed = [];
+                    localStorage.removeItem('mb_completed');
+                    updateUI();
+                }
+            };
+
+            el.prevBtn.onclick = () => { if (currentIdx > 0) { currentIdx--; updateUI(); } };
+            el.nextBtn.onclick = () => { if (currentIdx < CHALLENGES.length - 1) { currentIdx++; updateUI(); } };
+
+            function openMobileMenu() { el.sidebar.classList.remove('-translate-x-full'); el.overlay.classList.remove('hidden'); }
+            function closeMobileMenu() { el.sidebar.classList.add('-translate-x-full'); el.overlay.classList.add('hidden'); }
+            el.menuToggle.onclick = openMobileMenu;
+            el.overlay.onclick = closeMobileMenu;
+
+            updateUI();
+        });
+    </script>
+</body>
+</html>
